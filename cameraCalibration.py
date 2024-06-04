@@ -26,7 +26,7 @@ if __name__ == '__main__':
     objpoints = []  # 3d point in real world space
     imgpoints = []  # 2d points in image plane.
 
-    images = glob.glob('./gridPhotos/*.jpg')
+    images = glob.glob(f'./gridPhotos/{camera}_*.jpg')
 
     if not os.path.exists(f'{camera}.pkl'):
 
@@ -61,5 +61,52 @@ if __name__ == '__main__':
             cv.destroyAllWindows()
         else:
             print("First you need to capture grid photos with this camera. Move them into the gridPhotos folder.")
+            capture_photos()
     else:
         print('This Camera was already calibrated')
+
+
+def capture_photos():
+    # Ask for the camera name and index from the user
+    camera_name = input("Enter the camera name: ")
+    camera_index = int(input("Enter the camera index: "))
+
+    # Setup the directory path based on the camera name
+    directory_path = f'gridPhotos/{camera_name}'
+    os.makedirs(directory_path, exist_ok=True)
+
+    # Start capturing from the camera
+    cap = cv2.VideoCapture(camera_index)
+    
+    try:
+        if not cap.isOpened():
+            print("Error: Camera could not be opened.")
+            return
+        
+        print("Press 'c' to capture a photo and 'q' to quit.")
+        
+        while True:
+            # Capture frame-by-frame
+            ret, frame = cap.read()
+            if not ret:
+                print("Failed to grab frame.")
+                break
+            
+            # Display the resulting frame
+            cv2.imshow('Camera', frame)
+            
+            # Wait for user input to capture a photo or quit
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('c'):
+                # Generate a timestamp for the photo
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                photo_filename = f"{directory_path}/photo_{timestamp}.jpg"
+                cv2.imwrite(photo_filename, frame)
+                print(f"Photo saved: {photo_filename}")
+            elif key == ord('q'):
+                print("Exiting.")
+                break
+    finally:
+        # When everything done, release the capture
+        cap.release()
+        cv2.destroyAllWindows()
